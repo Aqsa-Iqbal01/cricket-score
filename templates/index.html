@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Cricket Scores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0; /* Remove body padding */
+            background-color: #14213d; /* New dark blue background */
+            color: #000814; /* Very dark blue text */
+            display: flex; /* Use flexbox for centering */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            min-height: 100vh; /* Full viewport height */
+        }
+        .main-content-box {
+            background-color: #ffffff; /* White background for the box */
+            border-radius: 25px; /* Rounded corners */
+            padding: 20px;
+            max-width: 800px; /* Max width for the content box */
+            width: 90%; /* Responsive width */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
+        }
+        .container {
+            max-width: none; /* Remove max-width from container, it's handled by main-content-box */
+            margin: 0 auto;
+        }
+        h1 {
+            color: #003566; /* Specific dark blue */
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 700;
+            font-size: 2.5em;
+        }
+        .score-item {
+            background-color: #ffffff; /* White background */
+            border-radius: 8px; /* Slightly less rounded corners */
+            margin-bottom: 15px;
+            box-shadow: 0 4px 8px 0 rgba(165, 158, 140, 0.4); /* Shadow with specified color */
+            overflow: hidden; /* Important for the accordion effect */
+            transition: all 0.3s ease-out;
+        }
+        .score-item-header {
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f8f8f8; /* Slightly off-white */
+            border-bottom: 1px solid #ddd;
+        }
+        .score-item-header:hover {
+            background-color: #ededed; /* Lighter gray on hover */
+        }
+        .score-item-header h2 {
+            margin: 0;
+            color: #000000; /* Black */
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+        .score-item-content {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, padding 0.5s ease-in-out;
+        }
+        .score-item-content p {
+            margin: 15px 0;
+            line-height: 1.6;
+            color: #000000; /* Black */
+        }
+        .details-button {
+            display: inline-block;
+            background-color: #013a63; /* Specific dark blue */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px; /* Rounded, pill shape */
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .details-button:hover {
+            background-color: #002b4d; /* Darker shade for hover */
+            transform: translateY(-2px);
+        }
+        .no-scores {
+            text-align: center;
+            color: #000814; /* Very dark blue text */
+            font-style: italic;
+            padding: 20px;
+            background-color: #ffffff; /* White background */
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content-box">
+        <div class="container">
+            <h1>Live Cricket Scores</h1>
+            {% if scores %}
+                {% for score in scores %}
+                    <div class="score-item">
+                        <div class="score-item-header">
+                            <h2>{{ score.title }}</h2>
+                            <span>&#x25BC;</span> <!-- Down arrow icon -->
+                        </div>
+                        <div class="score-item-content">
+                            <p>{{ score.description }}</p>
+                            <a href="{{ score.link }}" target="_blank" class="details-button">More Details</a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="no-scores">No live scores available at the moment. Please try again later.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const scoreItems = document.querySelectorAll('.score-item-header');
+            scoreItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    const content = this.nextElementSibling;
+                    this.parentElement.classList.toggle('active');
+
+                    if (content.style.maxHeight) {
+                        content.style.maxHeight = null;
+                        content.style.padding = '0 20px';
+                        this.querySelector('span').innerHTML = '&#x25BC;'; // Down arrow
+                    } else {
+                        // Close all other open items
+                        document.querySelectorAll('.score-item.active').forEach(openItem => {
+                            if(openItem !== this.parentElement){
+                                const openContent = openItem.querySelector('.score-item-content');
+                                openContent.style.maxHeight = null;
+                                openContent.style.padding = '0 20px';
+                                openItem.querySelector('span').innerHTML = '&#x25BC;';
+                                openItem.classList.remove('active');
+                            }
+                        });
+
+                        // Open the clicked item
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        content.style.padding = '15px 20px';
+                        this.querySelector('span').innerHTML = '&#x25B2;'; // Up arrow
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
