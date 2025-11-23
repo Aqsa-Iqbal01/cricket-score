@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Cricket Scores</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
             font-family: 'Poppins', sans-serif;
@@ -24,6 +25,30 @@
             max-width: 800px; /* Max width for the content box */
             width: 90%; /* Responsive width */
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow */
+        }
+        .search-box {
+            margin: 0 auto 20px;
+            max-width: 600px;
+        }
+        .search-input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        #search-input {
+            width: 100%;
+            padding: 12px 20px 12px 40px; /* Adjust padding for icon */
+            font-size: 1em;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        .search-input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888;
         }
         .container {
             max-width: none; /* Remove max-width from container, it's handled by main-content-box */
@@ -102,58 +127,121 @@
     <div class="main-content-box">
         <div class="container">
             <h1>Live Cricket Scores</h1>
-            {% if scores %}
-                {% for score in scores %}
-                    <div class="score-item">
-                        <div class="score-item-header">
-                            <h2>{{ score.title }}</h2>
-                            <span>&#x25BC;</span> <!-- Down arrow icon -->
-                        </div>
-                        <div class="score-item-content">
-                            <p>{{ score.description }}</p>
-                            <a href="{{ score.link }}" target="_blank" class="details-button">More Details</a>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="no-scores">No live scores available at the moment. Please try again later.</p>
-            {% endif %}
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Search by team name, match type...">
+                </div>
+            </div>
+            <div id="scores-container">
+                <!-- Scores will be loaded here by JavaScript -->
+            </div>
         </div>
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const scoreItems = document.querySelectorAll('.score-item-header');
-            scoreItems.forEach(item => {
-                item.addEventListener('click', function () {
-                    const content = this.nextElementSibling;
-                    this.parentElement.classList.toggle('active');
+        // Function to initialize accordion functionality
+        function initializeAccordions() {
+            const scoreHeaders = document.querySelectorAll('.score-item-header');
+            scoreHeaders.forEach(header => {
+                header.removeEventListener('click', handleAccordionClick); // Prevent duplicate listeners
+                header.addEventListener('click', handleAccordionClick);
+            });
+        }
 
-                    if (content.style.maxHeight) {
-                        content.style.maxHeight = null;
-                        content.style.padding = '0 20px';
-                        this.querySelector('span').innerHTML = '&#x25BC;'; // Down arrow
-                    } else {
-                        // Close all other open items
-                        document.querySelectorAll('.score-item.active').forEach(openItem => {
-                            if(openItem !== this.parentElement){
-                                const openContent = openItem.querySelector('.score-item-content');
-                                openContent.style.maxHeight = null;
-                                openContent.style.padding = '0 20px';
-                                openItem.querySelector('span').innerHTML = '&#x25BC;';
-                                openItem.classList.remove('active');
-                            }
-                        });
+        // Accordion click handler
+        function handleAccordionClick() {
+            const content = this.nextElementSibling;
+            const parent = this.parentElement;
 
-                        // Open the clicked item
-                        content.style.maxHeight = content.scrollHeight + "px";
-                        content.style.padding = '15px 20px';
-                        this.querySelector('span').innerHTML = '&#x25B2;'; // Up arrow
+            parent.classList.toggle('active');
+
+            if (content.style.maxHeight) {
+                content.style.maxHeight = null;
+                content.style.padding = '0 20px';
+                this.querySelector('span').innerHTML = '&#x25BC;'; // Down arrow
+            } else {
+                // Close all other open items
+                document.querySelectorAll('.score-item.active').forEach(openItem => {
+                    if (openItem !== parent) {
+                        const openContent = openItem.querySelector('.score-item-content');
+                        openContent.style.maxHeight = null;
+                        openContent.style.padding = '0 20px';
+                        openItem.querySelector('.score-item-header span').innerHTML = '&#x25BC;';
+                        openItem.classList.remove('active');
                     }
                 });
+
+                // Open the clicked item
+                content.style.maxHeight = content.scrollHeight + "px";
+                content.style.padding = '15px 20px';
+                this.querySelector('span').innerHTML = '&#x25B2;'; // Up arrow
+            }
+        }
+
+        // Function to render scores from JSON data
+        function renderScores(scores) {
+            const scoresContainer = document.getElementById('scores-container');
+            scoresContainer.innerHTML = ''; // Clear existing scores
+
+            if (scores && scores.length > 0) {
+                scores.forEach(score => {
+                    const scoreItem = document.createElement('div');
+                    scoreItem.classList.add('score-item');
+                    scoreItem.innerHTML = `
+                        <div class="score-item-header">
+                            <h2>${score.title}</h2>
+                            <span>&#x25BC;</span>
+                        </div>
+                        <div class="score-item-content">
+                            <p>${score.description}</p>
+                            <a href="${score.link}" target="_blank" class="details-button">More Details</a>
+                        </div>
+                    `;
+                    scoresContainer.appendChild(scoreItem);
+                });
+            } else {
+                scoresContainer.innerHTML = '<p class="no-scores">No live scores available at the moment. Please try again later.</p>';
+            }
+            initializeAccordions(); // Re-initialize accordions for new content
+        }
+
+        // Function to fetch and render scores
+        async function fetchAndRenderScores(searchTerm = '') {
+            try {
+                const response = await fetch(`/api/scores?search=${searchTerm}`);
+                const scores = await response.json();
+                renderScores(scores);
+            } catch (error) {
+                console.error('Error fetching scores:', error);
+                const scoresContainer = document.getElementById('scores-container');
+                scoresContainer.innerHTML = '<p class="no-scores">Failed to load scores. Please check your connection.</p>';
+            }
+        }
+
+        // Debounce function
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Initial load and then refresh every 30 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('search-input');
+            const debouncedFetch = debounce(fetchAndRenderScores, 300); // 300ms debounce
+
+            searchInput.addEventListener('input', () => {
+                debouncedFetch(searchInput.value.trim());
             });
+
+            fetchAndRenderScores(); // Initial load
+            setInterval(() => {
+                fetchAndRenderScores(searchInput.value.trim());
+            }, 30000); // Refresh every 30 seconds
         });
     </script>
-
 </body>
 </html>

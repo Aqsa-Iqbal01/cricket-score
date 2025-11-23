@@ -1,7 +1,7 @@
 
 import requests
 import xmltodict
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
@@ -23,8 +23,24 @@ def index():
     """
     Renders the index page with live scores.
     """
+    return render_template("index.html")
+
+@app.route("/api/scores")
+def api_scores():
+    """
+    Returns live cricket scores as JSON, with optional search.
+    """
+    search_term = request.args.get("search", "").lower()
     scores = get_live_scores()
-    return render_template("index.html", scores=scores)
+
+    if search_term:
+        filtered_scores = [
+            score for score in scores
+            if search_term in score.get("title", "").lower()
+        ]
+        return jsonify(filtered_scores)
+    else:
+        return jsonify(scores)
 
 if __name__ == "__main__":
     app.run(debug=True)
